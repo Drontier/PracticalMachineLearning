@@ -1,0 +1,55 @@
+---
+title: "PractMachineLearning"
+author: "Eric Pei"
+date: "October 24, 2015"
+output: pdf_document
+---
+
+
+
+```{r}
+library(caret)
+train <- read.csv(file="pml-training.csv", header= TRUE)
+test <- read.csv(file="pml-testing.csv", header= TRUE)
+summary(train$classe)
+set.seed(12345)
+inTrain <- createDataPartition(y=train$classe, p=0.6, list=FALSE)
+training <- train[inTrain,]
+testing <- train[-inTrain,]
+dim(training)
+dim(testing)
+```
+
+First, we preprocess our data in a couple of ways.
+
+Step 1, we remove the variabels with too many NAs
+
+```{r, echo=FALSE}
+NAvaltrain <- sapply(training, function(x) sum(is.na(x))) < 500
+NAvaltest <- sapply(testing, function(x) sum(is.na(x))) < 500
+noNAtrain <- training[, NAvaltrain==T]
+noNAtest <- testing[, NAvaltest==T]
+```
+
+Step 2, we remove the values with very little variance with the nearZeroVar command.
+
+```{r, echo=FALSE}
+Near0train <- nearZeroVar(noNAtrain)
+Near0test <- nearZeroVar(noNAtest)
+no0NAtrain <- noNAtrain[, -Near0train]
+no0NAtest <- noNAtest[, -Near0test]
+```
+
+We will use the Random Forest method and since using class(method="rf") takes hours on my computer, I have installed the randomForest package. 
+
+```{r, echo=FALSE}
+library(randomForest)
+modrf <- randomForest(classe~., data=no0NAtrain)
+
+pmodrf <- predict(modrf, no0NAtest)
+confusionMatrix(pmodrf, no0NAtest$class)
+```
+
+Here is our confusion matrix.
+Accuracy of 100%! No need to look further, lets apply this to our test.
+
